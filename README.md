@@ -14,6 +14,13 @@ Use the built in task to start the server:
 deno task start
 ```
 
+```bash
+deno run --allow-net --allow-read --allow-write start.ts
+```
+
+Make sure to include the `.ts` extension; running `deno run start` will fail
+with a "module not found" error.
+
 The server listens on http://localhost:8000 and serves:
 
 - `GET /api/greet` - returns a greeting JSON message.
