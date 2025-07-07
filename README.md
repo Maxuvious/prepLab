@@ -14,8 +14,6 @@ Use the built in task to start the server:
 deno task start
 ```
 
-You can also run the server directly:
-
 ```bash
 deno run --allow-net --allow-read --allow-write start.ts
 ```
