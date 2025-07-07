@@ -1,1 +1,27 @@
 # prepLab
+
+This repo contains a small example project using [Deno](https://deno.land) with a backend and a simple frontend.
+
+## Requirements
+
+- [Deno](https://deno.land/) >= 1.40 (or any recent version)
+
+## Running the server
+
+Use the built in task to start the server:
+
+```bash
+deno task start
+```
+
+The server listens on http://localhost:8000 and serves:
+
+- `GET /api/greet` - returns a greeting JSON message.
+- `GET /api/equipment` - list of all stock equipment by room and drawer.
+- `GET /api/cards` - list of prep lab cards. Add `?items=1` to include
+  associated equipment.
+- Static files from the `public` directory, including `index.html`.
+
+Open your browser to [http://localhost:8000](http://localhost:8000) to see the
+interactive interface. Use the search box to filter by class and view each card
+along with the equipment and storage locations it requires.
