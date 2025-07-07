@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PrepLab Cards</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 1em; background: #f5f5f5; }
+    #search { width: 100%; padding: 0.5em; margin-bottom: 1em; }
+    .card { background: #fffbe6; border: 1px solid #ccc; border-radius: 4px; box-shadow: 2px 2px 6px rgba(0,0,0,0.1); margin-bottom: 1em; padding: 1em; }
+    .card h3 { margin-top: 0; }
+    .item-list { list-style: none; padding-left: 1em; }
+  </style>
+</head>
+<body>
+  <h1>PrepLab Cards</h1>
+  <input type="text" id="search" placeholder="Search by class..." />
+  <div id="cards"></div>
+
+  <script type="module">
+    let allCards = [];
+
+    async function loadCards() {
+      const res = await fetch('/api/cards?items=1');
+      allCards = await res.json();
+      renderCards(allCards);
+    }
+
+    function renderCards(cards) {
+      const container = document.getElementById('cards');
+      container.innerHTML = '';
+      for (const card of cards) {
+        const div = document.createElement('div');
+        div.className = 'card';
+        const title = document.createElement('h3');
+        title.textContent = card.class;
+        const text = document.createElement('p');
+        text.textContent = card.card_text;
+        const ul = document.createElement('ul');
+        ul.className = 'item-list';
+        for (const item of card.items) {
+          const li = document.createElement('li');
+          li.textContent = `${item.name} - Room ${item.room}, Drawer ${item.drawer_code}`;
+          ul.appendChild(li);
+        }
+        div.appendChild(title);
+        div.appendChild(text);
+        div.appendChild(ul);
+        container.appendChild(div);
+      }
+    }
+
+    document.getElementById('search').addEventListener('input', (e) => {
+      const value = e.target.value.toLowerCase();
+      const filtered = allCards.filter(c => c.class.toLowerCase().includes(value));
+      renderCards(filtered);
+    });
+
+    loadCards();
+  </script>
+</body>
+</html>
