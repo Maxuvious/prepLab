@@ -1,5 +1,6 @@
 import { create, getNumericDate, verify } from "https://deno.land/x/djwt/mod.ts";
 
+
 let JWT_SECRET = "verysecret";
 try {
   const secret = Deno.env.get("JWT_SECRET");
@@ -7,6 +8,7 @@ try {
 } catch (_) {
   // ignore if env access is not allowed
 }
+
 
 export interface Session {
   id: number;
