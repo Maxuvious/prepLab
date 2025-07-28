@@ -32,3 +32,10 @@ The server listens on http://localhost:8000 and serves:
 Open your browser to [http://localhost:8000](http://localhost:8000) to see the
 interactive interface. Use the search box to filter by class and view each card
 along with the equipment and storage locations it requires.
+
+## Authentication and Tasks
+
+- POST /api/login returns a JWT for valid credentials.
+- Authenticated users can check tasks via /api/tasks/check; updates broadcast over WebSockets.
+- Root users can list all accounts via /api/users and reset task checks with /api/reset-semester.
+- The frontend now shows a login form and live checkboxes with user-colored highlights.

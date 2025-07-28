@@ -9,7 +9,6 @@ try {
   // ignore if env access is not allowed
 }
 
-
 export interface Session {
   id: number;
   username: string;
