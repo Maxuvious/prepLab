@@ -13,17 +13,58 @@
   </style>
 </head>
 <body>
-  <h1>PrepLab Cards</h1>
-  <input type="text" id="search" placeholder="Search by class..." />
+  <div id="login">
+    <input id="user" placeholder="username" />
+    <input id="pass" type="password" placeholder="password" />
+    <button id="loginBtn">Login</button>
+  </div>
+  <h1 style="display:none" id="title">PrepLab Cards</h1>
+  <input type="text" id="search" placeholder="Search by class..." style="display:none" />
   <div id="cards"></div>
 
   <script type="module">
     let allCards = [];
+    let token = '';
+    let socket;
+
+    async function login() {
+      const username = document.getElementById('user').value;
+      const password = document.getElementById('pass').value;
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        body: JSON.stringify({ username, password }),
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!res.ok) return alert('login failed');
+      const data = await res.json();
+      token = data.token;
+      document.getElementById('login').style.display = 'none';
+      document.getElementById('title').style.display = 'block';
+      document.getElementById('search').style.display = 'block';
+      connectWS();
+      loadCards();
+    }
 
     async function loadCards() {
-      const res = await fetch('/api/cards?items=1');
+      const res = await fetch('/api/cards?items=1', {
+        headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+      });
       allCards = await res.json();
       renderCards(allCards);
+    }
+
+    function connectWS() {
+      socket = new WebSocket(`ws://${location.host}/ws`);
+      socket.onmessage = (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.type === 'reset') return loadCards();
+        const t = document.querySelector(`[data-task="${msg.taskId}"]`);
+        if (t) {
+          t.checked = msg.checked;
+          t.parentElement.style.background = msg.color;
+          t.parentElement.title = `Checked by ${msg.user}`;
+        }
+      };
     }
 
     function renderCards(cards) {
@@ -38,9 +79,28 @@
         text.textContent = card.card_text;
         const ul = document.createElement('ul');
         ul.className = 'item-list';
-        for (const item of card.items) {
+        for (const task of card.tasks) {
           const li = document.createElement('li');
-          li.textContent = `${item.name} - Room ${item.room}, Drawer ${item.drawer_code}`;
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.dataset.task = task.id;
+          cb.checked = task.is_checked;
+          if (task.color) {
+            li.style.background = task.color;
+            li.title = `Checked by ${task.username}`;
+          }
+          cb.addEventListener('change', async () => {
+            await fetch('/api/tasks/check', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+              },
+              body: JSON.stringify({ taskId: task.id, checked: cb.checked })
+            });
+          });
+          li.appendChild(cb);
+          li.appendChild(document.createTextNode(' ' + task.description));
           ul.appendChild(li);
         }
         div.appendChild(title);
@@ -50,13 +110,12 @@
       }
     }
 
+    document.getElementById('loginBtn').onclick = login;
     document.getElementById('search').addEventListener('input', (e) => {
       const value = e.target.value.toLowerCase();
       const filtered = allCards.filter(c => c.class.toLowerCase().includes(value));
       renderCards(filtered);
     });
-
-    loadCards();
   </script>
 </body>
 </html>
