@@ -1,4 +1,5 @@
 import { DB } from "https://deno.land/x/sqlite/mod.ts";
+import { hash } from "https://deno.land/x/bcrypt/mod.ts";
 
 const db = new DB("lab.db");
 
@@ -30,6 +31,31 @@ db.execute(`
     equipment_id INTEGER NOT NULL,
     FOREIGN KEY(card_id) REFERENCES prep_lab_cards(id),
     FOREIGN KEY(equipment_id) REFERENCES stock_equipment(id)
+  )
+`);
+
+// Simple user table with role and a preferred color for task check marks
+db.execute(`
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    role TEXT NOT NULL,
+    color TEXT NOT NULL
+  )
+`);
+
+// Tasks belong to a card and can be checked by any user
+db.execute(`
+  CREATE TABLE IF NOT EXISTS card_tasks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    card_id INTEGER NOT NULL,
+    description TEXT NOT NULL,
+    is_checked INTEGER DEFAULT 0,
+    checked_by INTEGER,
+    checked_at TEXT,
+    FOREIGN KEY(card_id) REFERENCES prep_lab_cards(id),
+    FOREIGN KEY(checked_by) REFERENCES users(id)
   )
 `);
 
@@ -66,6 +92,29 @@ if (row === 0) {
   db.query("INSERT INTO card_equipment (card_id, equipment_id) VALUES (?, ?)", [cardIds[0], eqIds[0]]);
   db.query("INSERT INTO card_equipment (card_id, equipment_id) VALUES (?, ?)", [cardIds[1], eqIds[1]]);
   db.query("INSERT INTO card_equipment (card_id, equipment_id) VALUES (?, ?)", [cardIds[1], eqIds[2]]);
+
+  // Create demo users
+  const rootPass = await hash("rootpass");
+  const userPass = await hash("userpass");
+  db.query(
+    "INSERT INTO users (username, password, role, color) VALUES (?, ?, ?, ?)",
+    ["root", rootPass, "root", "#ff0000"],
+  );
+  db.query(
+    "INSERT INTO users (username, password, role, color) VALUES (?, ?, ?, ?)",
+    ["alice", userPass, "user", "#0000ff"],
+  );
+
+  // Seed a couple of tasks for the first card
+  const biologyCard = cardIds[0];
+  db.query(
+    "INSERT INTO card_tasks (card_id, description) VALUES (?, ?)",
+    [biologyCard, "Clean microscopes"],
+  );
+  db.query(
+    "INSERT INTO card_tasks (card_id, description) VALUES (?, ?)",
+    [biologyCard, "Return slides"],
+  );
 }
 
 export { db };
