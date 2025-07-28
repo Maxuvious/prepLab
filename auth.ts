@@ -1,5 +1,6 @@
 import { create, getNumericDate, verify } from "https://deno.land/x/djwt/mod.ts";
 
+
 let JWT_SECRET = "verysecret";
 try {
   const secret = Deno.env.get("JWT_SECRET");
