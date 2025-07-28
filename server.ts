@@ -160,5 +160,21 @@ async function handler(request: Request): Promise<Response> {
   }
 }
 
-console.log("Server running on http://localhost:8000");
-await serve(handler, { addr: ":8000" });
+let PORT = "8000";
+try {
+  const envPort = Deno.env.get("PORT");
+  if (envPort) PORT = envPort;
+} catch (_) {
+  // ignore if env access not allowed
+}
+
+console.log(`Server running on http://localhost:${PORT}`);
+try {
+  await serve(handler, { addr: `:${PORT}` });
+} catch (err) {
+  if (err instanceof Deno.errors.AddrInUse) {
+    console.error(`Port ${PORT} already in use.`);
+  } else {
+    throw err;
+  }
+}
