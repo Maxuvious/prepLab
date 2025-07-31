@@ -3,118 +3,110 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PrepLab Cards</title>
+  <title>PrepLab Cards - Test Version</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 1em; background: #f5f5f5; }
-    #search { width: 100%; padding: 0.5em; margin-bottom: 1em; }
-    .card { background: #fffbe6; border: 1px solid #ccc; border-radius: 4px; box-shadow: 2px 2px 6px rgba(0,0,0,0.1); margin-bottom: 1em; padding: 1em; }
-    .card h3 { margin-top: 0; }
     .item-list { list-style: none; padding-left: 1em; }
+    .loading { opacity: 0.5; pointer-events: none; }
   </style>
 </head>
-<body>
-  <div id="login">
-    <input id="user" placeholder="username" />
-    <input id="pass" type="password" placeholder="password" />
-    <button id="loginBtn">Login</button>
+<body class="bg-gray-100 font-sans p-4">
+  <div id="login" class="max-w-md mx-auto bg-white p-6 rounded-lg shadow-md">
+    <h2 class="text-2xl font-bold mb-4">Login (Test Mode)</h2>
+    <input id="user" placeholder="Username" class="w-full p-2 mb-2 border rounded" />
+    <input id="pass" type="password" placeholder="Password" class="w-full p-2 mb-2 border rounded" />
+    <button id="loginBtn" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Login</button>
+    <p id="loginError" class="text-red-500 mt-2 hidden">Login failed. Please check your credentials.</p>
   </div>
-  <h1 style="display:none" id="title">PrepLab Cards</h1>
-  <input type="text" id="search" placeholder="Search by class..." style="display:none" />
-  <div id="cards"></div>
+  <div id="main" class="hidden">
+    <h1 id="title" class="text-3xl font-bold text-center mb-4">PrepLab Cards</h1>
+    <input type="text" id="search" placeholder="Search by class..." class="w-full max-w-md mx-auto p-2 mb-4 border rounded" />
+    <div id="cards" class="grid gap-4 max-w-4xl mx-auto"></div>
+  </div>
 
   <script type="module">
-    let allCards = [];
-    let token = '';
-    let socket;
+    document.addEventListener('DOMContentLoaded', async () => {
+      console.log('DOM loaded - Test version started');
+      let token = localStorage.getItem('token') || '';
+      let role = localStorage.getItem('role') || '';
 
-    async function login() {
-      const username = document.getElementById('user').value;
-      const password = document.getElementById('pass').value;
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        body: JSON.stringify({ username, password }),
-        headers: { 'Content-Type': 'application/json' },
-      });
-      if (!res.ok) return alert('login failed');
-      const data = await res.json();
-      token = data.token;
-      document.getElementById('login').style.display = 'none';
-      document.getElementById('title').style.display = 'block';
-      document.getElementById('search').style.display = 'block';
-      connectWS();
-      loadCards();
-    }
+      async function handleLogin() {
+        const username = document.getElementById('user').value.trim();
+        const password = document.getElementById('pass').value;
+        const loginError = document.getElementById('loginError');
+        const loginDiv = document.getElementById('login');
 
-    async function loadCards() {
-      const res = await fetch('/api/cards?items=1', {
-        headers: token ? { 'Authorization': 'Bearer ' + token } : {}
-      });
-      allCards = await res.json();
-      renderCards(allCards);
-    }
-
-    function connectWS() {
-      socket = new WebSocket(`ws://${location.host}/ws`);
-      socket.onmessage = (e) => {
-        const msg = JSON.parse(e.data);
-        if (msg.type === 'reset') return loadCards();
-        const t = document.querySelector(`[data-task="${msg.taskId}"]`);
-        if (t) {
-          t.checked = msg.checked;
-          t.parentElement.style.background = msg.color;
-          t.parentElement.title = `Checked by ${msg.user}`;
+        if (!username || !password) {
+          loginError.textContent = 'Username and password are required';
+          loginError.classList.remove('hidden');
+          return;
         }
-      };
-    }
 
-    function renderCards(cards) {
-      const container = document.getElementById('cards');
-      container.innerHTML = '';
-      for (const card of cards) {
-        const div = document.createElement('div');
-        div.className = 'card';
-        const title = document.createElement('h3');
-        title.textContent = card.class;
-        const text = document.createElement('p');
-        text.textContent = card.card_text;
-        const ul = document.createElement('ul');
-        ul.className = 'item-list';
-        for (const task of card.tasks) {
-          const li = document.createElement('li');
-          const cb = document.createElement('input');
-          cb.type = 'checkbox';
-          cb.dataset.task = task.id;
-          cb.checked = task.is_checked;
-          if (task.color) {
-            li.style.background = task.color;
-            li.title = `Checked by ${task.username}`;
-          }
-          cb.addEventListener('change', async () => {
-            await fetch('/api/tasks/check', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + token
-              },
-              body: JSON.stringify({ taskId: task.id, checked: cb.checked })
-            });
+        console.log('Login attempt:', username); // Debug - password not logged for security
+        loginError.classList.add('hidden');
+        loginDiv.classList.add('loading');
+        try {
+          const res = await fetch('/api/login', {
+            method: 'POST',
+            body: JSON.stringify({ username, password }),
+            headers: { 'Content-Type': 'application/json' },
           });
-          li.appendChild(cb);
-          li.appendChild(document.createTextNode(' ' + task.description));
-          ul.appendChild(li);
-        }
-        div.appendChild(title);
-        div.appendChild(text);
-        div.appendChild(ul);
-        container.appendChild(div);
-      }
-    }
 
-    document.getElementById('loginBtn').onclick = login;
-    document.getElementById('search').addEventListener('input', (e) => {
-      const value = e.target.value.toLowerCase();
-      const filtered = allCards.filter(c => c.class.toLowerCase().includes(value));
-      renderCards(filtered);
+          if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.error || 'Login failed');
+          }
+
+          const data = await res.json();
+          token = data.token;
+          role = data.role;
+          localStorage.setItem('token', token);
+          localStorage.setItem('role', role);
+          console.log('Login success - role:', role);
+
+          document.getElementById('login').classList.add('hidden');
+          document.getElementById('main').classList.remove('hidden');
+
+          if (role === 'root') {
+            window.location.href = '/admin.html';
+          } else {
+            const { loadCards } = await import('./cards.js');
+            loadCards();
+          }
+        } catch (err) {
+          console.error('Login error:', err.message);
+          loginError.textContent = err.message;
+          loginError.classList.remove('hidden');
+        } finally {
+          loginDiv.classList.remove('loading');
+        }
+      }
+
+      document.getElementById('loginBtn').addEventListener('click', (e) => {
+        console.log('Login button clicked');
+        handleLogin();
+      });
+
+      document.getElementById('pass').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          console.log('Enter key pressed');
+          handleLogin();
+        }
+      });
+
+      document.getElementById('search').addEventListener('input', async (e) => {
+        const value = e.target.value.toLowerCase();
+        const { renderCards } = await import('./cards.js');
+        renderCards(value);
+      });
+
+      if (localStorage.getItem('token')) {
+        console.log('Token found, loading main');
+        document.getElementById('login').classList.add('hidden');
+        document.getElementById('main').classList.remove('hidden');
+        const { loadCards } = await import('./cards.js');
+        loadCards();
+      }
     });
   </script>
 </body>

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PrepLab Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans p-4">
+  <div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold mb-4">PrepLab Admin</h1>
+    <button id="logoutBtn" class="bg-red-500 text-white p-2 rounded hover:bg-red-600 mb-4">Logout</button>
+
+    <h2 class="text-2xl font-semibold mb-2">Manage Users</h2>
+    <div class="bg-white p-4 rounded-lg shadow-md mb-4">
+      <h3 class="text-lg font-medium">Add/Edit User</h3>
+      <input id="userId" type="hidden" />
+      <input id="username" placeholder="Username" class="p-2 m-2 border rounded" />
+      <input id="password" type="password" placeholder="Password" class="p-2 m-2 border rounded" />
+      <select id="role" class="p-2 m-2 border rounded">
+        <option value="user">User</option>
+        <option value="root">Root</option>
+      </select>
+      <input id="color" type="color" value="#000000" class="p-2 m-2" />
+      <button id="saveUser" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Save User</button>
+    </div>
+    <div id="usersList" class="grid gap-2"></div>
+
+    <h2 class="text-2xl font-semibold mb-2 mt-4">Manage Cards</h2>
+    <div class="bg-white p-4 rounded-lg shadow-md mb-4">
+      <h3 class="text-lg font-medium">Add/Edit Card</h3>
+      <input id="cardId" type="hidden" />
+      <input id="cardClass" placeholder="Class" class="p-2 m-2 border rounded" />
+      <textarea id="cardText" placeholder="Card Text" class="p-2 m-2 border rounded w-full"></textarea>
+      <button id="saveCard" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Save Card</button>
+    </div>
+    <div id="cardsList" class="grid gap-2"></div>
+
+    <h2 class="text-2xl font-semibold mb-2 mt-4">Change Requests</h2>
+    <div id="changeRequests" class="grid gap-2"></div>
+  </div>
+
+  <script type="module">
+    import { token, role } from './auth.js';
+
+    if (!token || role !== 'root') {
+      window.location.href = '/';
+    }
+
+    document.getElementById('logoutBtn').onclick = () => {
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      window.location.href = '/';
+    };
+
+    async function loadUsers() {
+      try {
+        const res = await fetch('/api/users', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) throw new Error('Failed to load users');
+        const users = await res.json();
+        const container = document.getElementById('usersList');
+        container.innerHTML = '';
+        for (const user of users) {
+          const div = document.createElement('div');
+          div.className = 'bg-white p-2 rounded shadow flex justify-between items-center';
+          div.innerHTML = `
+            <span>${user.username} (${user.role}, Color: <span style="color:${user.color}">${user.color}</span>)</span>
+            <button class="edit-user bg-yellow-500 text-white p-1 rounded hover:bg-yellow-600" data-id="${user.id}">Edit</button>
+          `;
+          container.appendChild(div);
+        }
+        document.querySelectorAll('.edit-user').forEach(btn => {
+          btn.onclick = () => {
+            const user = users.find(u => u.id === parseInt(btn.dataset.id));
+            document.getElementById('userId').value = user.id;
+            document.getElementById('username').value = user.username;
+            document.getElementById('password').value = '';
+            document.getElementById('role').value = user.role;
+            document.getElementById('color').value = user.color;
+          };
+        });
+      } catch (err) {
+        console.error('Error loading users:', err);
+      }
+    }
+
+    async function loadCards() {
+      try {
+        const res = await fetch('/api/cards?items=1', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) throw new Error('Failed to load cards');
+        const cards = await res.json();
+        const container = document.getElementById('cardsList');
+        container.innerHTML = '';
+        for (const card of cards) {
+          const div = document.createElement('div');
+          div.className = 'bg-white p-2 rounded shadow flex justify-between items-center';
+          div.innerHTML = `
+            <span>${card.class}: ${card.card_text}</span>
+            <button class="edit-card bg-yellow-500 text-white p-1 rounded hover:bg-yellow-600" data-id="${card.id}">Edit</button>
+          `;
+          container.appendChild(div);
+        }
+        document.querySelectorAll('.edit-card').forEach(btn => {
+          btn.onclick = () => {
+            const card = cards.find(c => c.id === parseInt(btn.dataset.id));
+            document.getElementById('cardId').value = card.id;
+            document.getElementById('cardClass').value = card.class;
+            document.getElementById('cardText').value = card.card_text;
+          };
+        });
+      } catch (err) {
+        console.error('Error loading cards:', err);
+      }
+    }
+
+    async function loadChangeRequests() {
+      try {
+        const res = await fetch('/api/change-requests', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) throw new Error('Failed to load change requests');
+        const requests = await res.json();
+        const container = document.getElementById('changeRequests');
+        container.innerHTML = '';
+        for (const req of requests) {
+          const div = document.createElement('div');
+          div.className = 'bg-white p-2 rounded shadow flex justify-between items-center';
+          div.innerHTML = `
+            <span>${req.username} requests: ${req.class} - ${req.card_text}</span>
+            <div>
+              <button class="approve-request bg-green-500 text-white p-1 rounded hover:bg-green-600" data-id="${req.id}">Approve</button>
+              <button class="reject-request bg-red-500 text-white p-1 rounded hover:bg-red-600" data-id="${req.id}">Reject</button>
+            </div>
+          `;
+          container.appendChild(div);
+        }
+        document.querySelectorAll('.approve-request').forEach(btn => {
+          btn.onclick = async () => {
+            try {
+              await fetch('/api/change-requests/approve', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({ requestId: parseInt(btn.dataset.id) })
+              });
+              loadChangeRequests();
+              loadCards();
+            } catch (err) {
+              console.error('Error approving request:', err);
+            }
+          };
+        });
+        document.querySelectorAll('.reject-request').forEach(btn => {
+          btn.onclick = async () => {
+            try {
+              await fetch('/api/change-requests/reject', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({ requestId: parseInt(btn.dataset.id) })
+              });
+              loadChangeRequests();
+            } catch (err) {
+              console.error('Error rejecting request:', err);
+            }
+          };
+        });
+      } catch (err) {
+        console.error('Error loading change requests:', err);
+      }
+    }
+
+    document.getElementById('saveUser').onclick = async () => {
+      const userId = document.getElementById('userId').value;
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const role = document.getElementById('role').value;
+      const color = document.getElementById('color').value;
+      if (!username) {
+        alert('Username is required');
+        return;
+      }
+      try {
+        const res = await fetch('/api/users', {
+          method: userId ? 'PUT' : 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({ id: userId ? parseInt(userId) : undefined, username, password, role, color })
+        });
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.error || 'Failed to save user');
+        }
+        document.getElementById('userId').value = '';
+        document.getElementById('username').value = '';
+        document.getElementById('password').value = '';
+        document.getElementById('role').value = 'user';
+        document.getElementById('color').value = '#000000';
+        loadUsers();
+      } catch (err) {
+        console.error('Error saving user:', err);
+        alert(err.message);
+      }
+    };
+
+    document.getElementById('saveCard').onclick = async () => {
+      const cardId = document.getElementById('cardId').value;
+      const cardClass = document.getElementById('cardClass').value.trim();
+      const cardText = document.getElementById('cardText').value.trim();
+      if (!cardClass || !cardText) {
+        alert('Class and Card Text are required');
+        return;
+      }
+      try {
+        const res = await fetch('/api/cards', {
+          method: cardId ? 'PUT' : 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({ id: cardId ? parseInt(cardId) : undefined, class: cardClass, card_text: cardText })
+        });
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.error || 'Failed to save card');
+        }
+        document.getElementById('cardId').value = '';
+        document.getElementById('cardClass').value = '';
+        document.getElementById('cardText').value = '';
+        loadCards();
+      } catch (err) {
+        console.error('Error saving card:', err);
+        alert(err.message);
+      }
+    };
+
+    loadUsers();
+    loadCards();
+    loadChangeRequests();
+  </script>
+</body>
+</html>

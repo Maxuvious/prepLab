@@ -1,0 +1,25 @@
+{
+  "name": "preplab",
+  "version": "1.0.0",
+  "description": "This repo contains a small example project using [Deno](https://deno.land) with a backend and a simple frontend.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Maxuvious/prepLab.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Maxuvious/prepLab/issues"
+  },
+  "homepage": "https://github.com/Maxuvious/prepLab#readme",
+  "dependencies": {
+    "typescript": "^5.8.3",
+    "typescript-deno-plugin": "1.31"
+  }
+}

@@ -39,3 +39,4 @@ along with the equipment and storage locations it requires.
 - Authenticated users can check tasks via /api/tasks/check; updates broadcast over WebSockets.
 - Root users can list all accounts via /api/users and reset task checks with /api/reset-semester.
 - The frontend now shows a login form and live checkboxes with user-colored highlights.
+

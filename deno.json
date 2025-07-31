@@ -1,5 +1,11 @@
 {
   "tasks": {
     "start": "deno run --allow-net --allow-read --allow-write server.ts"
+  },
+  "imports": {
+    "std/http/file_server.ts": "https://deno.land/std@0.214.0/http/file_server.ts",
+    "std/http/server.ts": "https://deno.land/std@0.214.0/http/server.ts",
+    "djwt": "https://deno.land/x/djwt@v3.0.2/mod.ts",
+    "bcrypt": "https://deno.land/x/bcrypt@v0.4.1/mod.ts"
   }
 }

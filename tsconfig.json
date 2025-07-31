@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "lib": ["deno.ns", "deno.unstable", "dom", "dom.iterable", "esnext"],
+    "strict": true,
+    "noImplicitAny": true,
+    "allowJs": false,
+    "module": "esnext",
+    "target": "esnext",
+    "moduleResolution": "node",
+    "allowImportingTsExtensions": true,
+    "allowSyntheticDefaultImports": true,
+    "noEmit": true,
+    "plugins": [
+      {
+        "name": "typescript-deno-plugin",
+        "enable": true,
+        "importMap": "deno.json"
+      }
+    ]
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["public/**/*"]
+}
