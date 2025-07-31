@@ -104,4 +104,5 @@ try {
 }
 
 console.log(`Server running on http://localhost:${PORT}`);
-serve(handler, { port: parseInt(PORT) });
+serve(handler, { hostname: "0.0.0.0", port: parseInt(PORT) });
+// serve(handler, { port: parseInt(PORT) });
