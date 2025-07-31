@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PrepLab Cards - Test Version</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .item-list { list-style: none; padding-left: 1em; }
+    .loading { opacity: 0.5; pointer-events: none; }
+  </style>
+</head>
+<body class="bg-gray-100 font-sans p-4">
+  <div id="main">
+    <h1 id="title" class="text-3xl font-bold text-center mb-4">PrepLab Cards</h1>
+    <button id="logoutBtn" class="bg-red-500 text-white p-2 rounded hover:bg-red-600 mb-4">Logout</button>
+    <input type="text" id="search" placeholder="Search by class..." class="w-full max-w-md mx-auto p-2 mb-4 border rounded" />
+    <div id="cards" class="grid gap-4 max-w-4xl mx-auto"></div>
+  </div>
+
+  <script type="module">
+    import { token, role } from './auth.js';
+
+    if (!token || role === 'root') {
+      window.location.href = '/';
+    }
+
+    document.getElementById('logoutBtn').onclick = () => {
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      window.location.href = '/';
+    };
+
+    const { loadCards } = await import('./cards.js');
+    loadCards();
+
+    document.getElementById('search').addEventListener('input', async (e) => {
+      const value = e.target.value.toLowerCase();
+      const { renderCards } = await import('./cards.js');
+      renderCards(value);
+    });
+  </script>
+</body>
+</html>

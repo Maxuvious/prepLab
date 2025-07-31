@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PrepLab Cards - Test Version</title>
+  <title>PrepLab Login - Test Version</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     .item-list { list-style: none; padding-left: 1em; }
@@ -18,68 +18,21 @@
     <button id="loginBtn" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Login</button>
     <p id="loginError" class="text-red-500 mt-2 hidden">Login failed. Please check your credentials.</p>
   </div>
-  <div id="main" class="hidden">
-    <h1 id="title" class="text-3xl font-bold text-center mb-4">PrepLab Cards</h1>
-    <input type="text" id="search" placeholder="Search by class..." class="w-full max-w-md mx-auto p-2 mb-4 border rounded" />
-    <div id="cards" class="grid gap-4 max-w-4xl mx-auto"></div>
-  </div>
 
   <script type="module">
+    import { handleLogin, token, role } from './auth.js';
+
     document.addEventListener('DOMContentLoaded', async () => {
       console.log('DOM loaded - Test version started');
-      let token = localStorage.getItem('token') || '';
-      let role = localStorage.getItem('role') || '';
 
-      async function handleLogin() {
-        const username = document.getElementById('user').value.trim();
-        const password = document.getElementById('pass').value;
-        const loginError = document.getElementById('loginError');
-        const loginDiv = document.getElementById('login');
-
-        if (!username || !password) {
-          loginError.textContent = 'Username and password are required';
-          loginError.classList.remove('hidden');
-          return;
+      if (token) {
+        console.log('Token found, redirecting');
+        if (role === 'root') {
+          window.location.href = '/admin.html';
+        } else {
+          window.location.href = '/cards.html';
         }
-
-        console.log('Login attempt:', username); // Debug - password not logged for security
-        loginError.classList.add('hidden');
-        loginDiv.classList.add('loading');
-        try {
-          const res = await fetch('/api/login', {
-            method: 'POST',
-            body: JSON.stringify({ username, password }),
-            headers: { 'Content-Type': 'application/json' },
-          });
-
-          if (!res.ok) {
-            const errorData = await res.json();
-            throw new Error(errorData.error || 'Login failed');
-          }
-
-          const data = await res.json();
-          token = data.token;
-          role = data.role;
-          localStorage.setItem('token', token);
-          localStorage.setItem('role', role);
-          console.log('Login success - role:', role);
-
-          document.getElementById('login').classList.add('hidden');
-          document.getElementById('main').classList.remove('hidden');
-
-          if (role === 'root') {
-            window.location.href = '/admin.html';
-          } else {
-            const { loadCards } = await import('./cards.js');
-            loadCards();
-          }
-        } catch (err) {
-          console.error('Login error:', err.message);
-          loginError.textContent = err.message;
-          loginError.classList.remove('hidden');
-        } finally {
-          loginDiv.classList.remove('loading');
-        }
+        return;
       }
 
       document.getElementById('loginBtn').addEventListener('click', (e) => {
@@ -93,20 +46,6 @@
           handleLogin();
         }
       });
-
-      document.getElementById('search').addEventListener('input', async (e) => {
-        const value = e.target.value.toLowerCase();
-        const { renderCards } = await import('./cards.js');
-        renderCards(value);
-      });
-
-      if (localStorage.getItem('token')) {
-        console.log('Token found, loading main');
-        document.getElementById('login').classList.add('hidden');
-        document.getElementById('main').classList.remove('hidden');
-        const { loadCards } = await import('./cards.js');
-        loadCards();
-      }
     });
   </script>
 </body>

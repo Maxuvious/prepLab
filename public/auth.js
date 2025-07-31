@@ -5,6 +5,7 @@ async function handleLogin() {
   const username = document.getElementById('user').value.trim();
   const password = document.getElementById('pass').value;
   const loginError = document.getElementById('loginError');
+  const loginDiv = document.getElementById('login');
 
   if (!username || !password) {
     loginError.textContent = 'Username and password are required';
@@ -14,6 +15,7 @@ async function handleLogin() {
 
   console.log('Login attempt:', { username }); // Debug - avoid logging password
   loginError.classList.add('hidden');
+  loginDiv.classList.add('loading');
   try {
     const res = await fetch('/api/login', {
       method: 'POST',
@@ -31,11 +33,19 @@ async function handleLogin() {
     role = data.role;
     localStorage.setItem('token', token);
     localStorage.setItem('role', role);
+    console.log('Login success - role:', role);
+
+    if (role === 'root') {
+      window.location.href = '/admin.html';
+    } else {
+      window.location.href = '/cards.html';
+    }
   } catch (err) {
     console.error('Login failed:', err);
     loginError.textContent = err.message || 'Network error or invalid credentials';
     loginError.classList.remove('hidden');
-    throw err;
+  } finally {
+    loginDiv.classList.remove('loading');
   }
 }
 
