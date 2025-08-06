@@ -10,7 +10,6 @@
   <div class="max-w-4xl mx-auto">
     <h1 class="text-3xl font-bold mb-4">PrepLab Admin</h1>
     <button id="logoutBtn" class="bg-red-500 text-white p-2 rounded hover:bg-red-600 mb-4">Logout</button>
-
     <h2 class="text-2xl font-semibold mb-2">Manage Users</h2>
     <div class="bg-white p-4 rounded-lg shadow-md mb-4">
       <h3 class="text-lg font-medium">Add/Edit User</h3>
@@ -25,34 +24,57 @@
       <button id="saveUser" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Save User</button>
     </div>
     <div id="usersList" class="grid gap-2"></div>
-
+    <h2 class="text-2xl font-semibold mb-2 mt-4">Manage Classes</h2>
+    <div class="bg-white p-4 rounded-lg shadow-md mb-4">
+      <h3 class="text-lg font-medium">Add/Edit Class</h3>
+      <input id="classId" type="hidden" />
+      <input id="className" placeholder="Class Name" class="p-2 m-2 border rounded" />
+      <input id="classColor" type="color" value="#000000" class="p-2 m-2" />
+      <button id="saveClass" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Save Class</button>
+    </div>
+    <div id="classesList" class="grid gap-2"></div>
     <h2 class="text-2xl font-semibold mb-2 mt-4">Manage Cards</h2>
     <div class="bg-white p-4 rounded-lg shadow-md mb-4">
       <h3 class="text-lg font-medium">Add/Edit Card</h3>
       <input id="cardId" type="hidden" />
-      <input id="cardClass" placeholder="Class" class="p-2 m-2 border rounded" />
+      <select id="cardClassId" class="p-2 m-2 border rounded"></select>
       <textarea id="cardText" placeholder="Card Text" class="p-2 m-2 border rounded w-full"></textarea>
       <button id="saveCard" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Save Card</button>
     </div>
     <div id="cardsList" class="grid gap-2"></div>
-
+    <h2 class="text-2xl font-semibold mb-2 mt-4">Manage Events</h2>
+    <div class="bg-white p-4 rounded-lg shadow-md mb-4">
+      <h3 class="text-lg font-medium">Add/Edit Event</h3>
+      <input id="eventId" type="hidden" />
+      <input id="eventTitle" placeholder="Title" class="p-2 m-2 border rounded" />
+      <input id="eventDate" type="date" class="p-2 m-2 border rounded" />
+      <textarea id="eventDescription" placeholder="Description" class="p-2 m-2 border rounded w-full"></textarea>
+      <button id="saveEvent" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Save Event</button>
+    </div>
+    <div id="eventsList" class="grid gap-2"></div>
+    <h2 class="text-2xl font-semibold mb-2 mt-4">Manage Carts</h2>
+    <div class="bg-white p-4 rounded-lg shadow-md mb-4">
+      <h3 class="text-lg font-medium">Add/Edit Cart</h3>
+      <input id="cartId" type="hidden" />
+      <input id="cartName" placeholder="Name" class="p-2 m-2 border rounded" />
+      <input id="cartCapacity" type="number" placeholder="Capacity" class="p-2 m-2 border rounded" />
+      <input id="cartUsage" type="number" placeholder="Current Usage" class="p-2 m-2 border rounded" />
+      <button id="saveCart" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Save Cart</button>
+    </div>
+    <div id="cartsList" class="grid gap-2"></div>
     <h2 class="text-2xl font-semibold mb-2 mt-4">Change Requests</h2>
     <div id="changeRequests" class="grid gap-2"></div>
   </div>
-
   <script type="module">
     import { token, role } from './auth.js';
-
     if (!token || role !== 'root') {
       window.location.href = '/';
     }
-
     document.getElementById('logoutBtn').onclick = () => {
       localStorage.removeItem('token');
       localStorage.removeItem('role');
       window.location.href = '/';
     };
-
     async function loadUsers() {
       try {
         const res = await fetch('/api/users', {
@@ -85,7 +107,45 @@
         console.error('Error loading users:', err);
       }
     }
-
+    async function loadClasses() {
+      try {
+        const res = await fetch('/api/classes', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) throw new Error('Failed to load classes');
+        const classes = await res.json();
+        const container = document.getElementById('classesList');
+        container.innerHTML = '';
+        for (const cls of classes) {
+          const div = document.createElement('div');
+          div.className = 'bg-white p-2 rounded shadow flex justify-between items-center';
+          div.innerHTML = `
+            <span>${cls.name} (Color: <span style="color:${cls.color}">${cls.color}</span>)</span>
+            <button class="edit-class bg-yellow-500 text-white p-1 rounded hover:bg-yellow-600" data-id="${cls.id}">Edit</button>
+          `;
+          container.appendChild(div);
+        }
+        document.querySelectorAll('.edit-class').forEach(btn => {
+          btn.onclick = () => {
+            const cls = classes.find(c => c.id === parseInt(btn.dataset.id));
+            document.getElementById('classId').value = cls.id;
+            document.getElementById('className').value = cls.name;
+            document.getElementById('classColor').value = cls.color;
+          };
+        });
+        // Populate select for cards
+        const select = document.getElementById('cardClassId');
+        select.innerHTML = '';
+        for (const cls of classes) {
+          const option = document.createElement('option');
+          option.value = cls.id;
+          option.textContent = cls.name;
+          select.appendChild(option);
+        }
+      } catch (err) {
+        console.error('Error loading classes:', err);
+      }
+    }
     async function loadCards() {
       try {
         const res = await fetch('/api/cards?items=1', {
@@ -108,7 +168,9 @@
           btn.onclick = () => {
             const card = cards.find(c => c.id === parseInt(btn.dataset.id));
             document.getElementById('cardId').value = card.id;
-            document.getElementById('cardClass').value = card.class;
+            document.getElementById('cardClassId').value = card.class_id; // Need class_id in response? Wait, add in getCards if needed.
+            // Note: To get class_id, add in getCards select plc.class_id
+            // Assume added as card.class_id
             document.getElementById('cardText').value = card.card_text;
           };
         });
@@ -116,7 +178,70 @@
         console.error('Error loading cards:', err);
       }
     }
-
+    // Add loadEvents
+    async function loadEvents() {
+      try {
+        const res = await fetch('/api/events', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) throw new Error('Failed to load events');
+        const events = await res.json();
+        const container = document.getElementById('eventsList');
+        container.innerHTML = '';
+        for (const evt of events) {
+          const div = document.createElement('div');
+          div.className = 'bg-white p-2 rounded shadow flex justify-between items-center';
+          div.innerHTML = `
+            <span>${evt.title} on ${evt.date}</span>
+            <button class="edit-event bg-yellow-500 text-white p-1 rounded hover:bg-yellow-600" data-id="${evt.id}">Edit</button>
+          `;
+          container.appendChild(div);
+        }
+        document.querySelectorAll('.edit-event').forEach(btn => {
+          btn.onclick = () => {
+            const evt = events.find(e => e.id === parseInt(btn.dataset.id));
+            document.getElementById('eventId').value = evt.id;
+            document.getElementById('eventTitle').value = evt.title;
+            document.getElementById('eventDate').value = evt.date;
+            document.getElementById('eventDescription').value = evt.description || '';
+          };
+        });
+      } catch (err) {
+        console.error('Error loading events:', err);
+      }
+    }
+    // Add loadCarts
+    async function loadCarts() {
+      try {
+        const res = await fetch('/api/carts', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) throw new Error('Failed to load carts');
+        const carts = await res.json();
+        const container = document.getElementById('cartsList');
+        container.innerHTML = '';
+        for (const cart of carts) {
+          const div = document.createElement('div');
+          div.className = 'bg-white p-2 rounded shadow flex justify-between items-center';
+          div.innerHTML = `
+            <span>${cart.name} (${cart.current_usage}/${cart.capacity})</span>
+            <button class="edit-cart bg-yellow-500 text-white p-1 rounded hover:bg-yellow-600" data-id="${cart.id}">Edit</button>
+          `;
+          container.appendChild(div);
+        }
+        document.querySelectorAll('.edit-cart').forEach(btn => {
+          btn.onclick = () => {
+            const cart = carts.find(c => c.id === parseInt(btn.dataset.id));
+            document.getElementById('cartId').value = cart.id;
+            document.getElementById('cartName').value = cart.name;
+            document.getElementById('cartCapacity').value = cart.capacity;
+            document.getElementById('cartUsage').value = cart.current_usage;
+          };
+        });
+      } catch (err) {
+        console.error('Error loading carts:', err);
+      }
+    }
     async function loadChangeRequests() {
       try {
         const res = await fetch('/api/change-requests', {
@@ -130,7 +255,7 @@
           const div = document.createElement('div');
           div.className = 'bg-white p-2 rounded shadow flex justify-between items-center';
           div.innerHTML = `
-            <span>${req.username} requests: ${req.class} - ${req.card_text}</span>
+            <span>${req.username} requests: ${req.new_class} - ${req.new_card_text}</span>
             <div>
               <button class="approve-request bg-green-500 text-white p-1 rounded hover:bg-green-600" data-id="${req.id}">Approve</button>
               <button class="reject-request bg-red-500 text-white p-1 rounded hover:bg-red-600" data-id="${req.id}">Reject</button>
@@ -177,7 +302,6 @@
         console.error('Error loading change requests:', err);
       }
     }
-
     document.getElementById('saveUser').onclick = async () => {
       const userId = document.getElementById('userId').value;
       const username = document.getElementById('username').value.trim();
@@ -212,12 +336,41 @@
         alert(err.message);
       }
     };
-
+    document.getElementById('saveClass').onclick = async () => {
+      const classId = document.getElementById('classId').value;
+      const name = document.getElementById('className').value.trim();
+      const color = document.getElementById('classColor').value;
+      if (!name) {
+        alert('Class name is required');
+        return;
+      }
+      try {
+        const res = await fetch('/api/classes', {
+          method: classId ? 'PUT' : 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({ id: classId ? parseInt(classId) : undefined, name, color })
+        });
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.error || 'Failed to save class');
+        }
+        document.getElementById('classId').value = '';
+        document.getElementById('className').value = '';
+        document.getElementById('classColor').value = '#000000';
+        loadClasses();
+      } catch (err) {
+        console.error('Error saving class:', err);
+        alert(err.message);
+      }
+    };
     document.getElementById('saveCard').onclick = async () => {
       const cardId = document.getElementById('cardId').value;
-      const cardClass = document.getElementById('cardClass').value.trim();
+      const class_id = parseInt(document.getElementById('cardClassId').value);
       const cardText = document.getElementById('cardText').value.trim();
-      if (!cardClass || !cardText) {
+      if (!class_id || !cardText) {
         alert('Class and Card Text are required');
         return;
       }
@@ -228,14 +381,13 @@
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + token
           },
-          body: JSON.stringify({ id: cardId ? parseInt(cardId) : undefined, class: cardClass, card_text: cardText })
+          body: JSON.stringify({ id: cardId ? parseInt(cardId) : undefined, class_id, card_text: cardText })
         });
         if (!res.ok) {
           const error = await res.json();
           throw new Error(error.error || 'Failed to save card');
         }
         document.getElementById('cardId').value = '';
-        document.getElementById('cardClass').value = '';
         document.getElementById('cardText').value = '';
         loadCards();
       } catch (err) {
@@ -243,9 +395,77 @@
         alert(err.message);
       }
     };
-
+    // Add saveEvent
+    document.getElementById('saveEvent').onclick = async () => {
+      const eventId = document.getElementById('eventId').value;
+      const title = document.getElementById('eventTitle').value.trim();
+      const date = document.getElementById('eventDate').value;
+      const description = document.getElementById('eventDescription').value.trim();
+      if (!title || !date) {
+        alert('Title and Date are required');
+        return;
+      }
+      try {
+        const res = await fetch('/api/events', {
+          method: eventId ? 'PUT' : 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({ id: eventId ? parseInt(eventId) : undefined, title, date, description })
+        });
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.error || 'Failed to save event');
+        }
+        document.getElementById('eventId').value = '';
+        document.getElementById('eventTitle').value = '';
+        document.getElementById('eventDate').value = '';
+        document.getElementById('eventDescription').value = '';
+        loadEvents();
+      } catch (err) {
+        console.error('Error saving event:', err);
+        alert(err.message);
+      }
+    };
+    // Add saveCart
+    document.getElementById('saveCart').onclick = async () => {
+      const cartId = document.getElementById('cartId').value;
+      const name = document.getElementById('cartName').value.trim();
+      const capacity = parseInt(document.getElementById('cartCapacity').value);
+      const current_usage = parseInt(document.getElementById('cartUsage').value) || 0;
+      if (!name || isNaN(capacity) || capacity <= 0) {
+        alert('Name and positive Capacity are required');
+        return;
+      }
+      try {
+        const res = await fetch('/api/carts', {
+          method: cartId ? 'PUT' : 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({ id: cartId ? parseInt(cartId) : undefined, name, capacity, current_usage })
+        });
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.error || 'Failed to save cart');
+        }
+        document.getElementById('cartId').value = '';
+        document.getElementById('cartName').value = '';
+        document.getElementById('cartCapacity').value = '';
+        document.getElementById('cartUsage').value = '';
+        loadCarts();
+      } catch (err) {
+        console.error('Error saving cart:', err);
+        alert(err.message);
+      }
+    };
     loadUsers();
+    loadClasses();
     loadCards();
+    loadEvents();
+    loadCarts();
     loadChangeRequests();
   </script>
 </body>

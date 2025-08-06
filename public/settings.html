@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PrepLab Settings</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg: #f3f4f6;
+      --text: #111827;
+      --primary: #3b82f6;
+      --danger: #ef4444;
+      --warning: #eab308;
+      --success: #22c55e;
+      --mauve: #a78bfa;
+      --surface: #ffffff;
+      --shadow: rgba(0,0,0,0.1);
+      --border: #d1d5db;
+      --muted: #6b7280;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+    }
+    .bg-gray-100 {
+      background-color: var(--bg);
+    }
+    .bg-white {
+      background-color: var(--surface);
+    }
+    .shadow-md {
+      box-shadow: 0 4px 6px -1px var(--shadow);
+    }
+    .bg-blue-500 {
+      background-color: var(--primary);
+    }
+    .hover\:bg-blue-600:hover {
+      background-color: color-mix(in oklab, var(--primary), black 10%);
+    }
+    .bg-red-500 {
+      background-color: var(--danger);
+    }
+    .hover\:bg-red-600:hover {
+      background-color: color-mix(in oklab, var(--danger), black 10%);
+    }
+    .bg-yellow-500 {
+      background-color: var(--warning);
+    }
+    .hover\:bg-yellow-600:hover {
+      background-color: color-mix(in oklab, var(--warning), black 10%);
+    }
+    .bg-green-500 {
+      background-color: var(--success);
+    }
+    .hover\:bg-green-600:hover {
+      background-color: color-mix(in oklab, var(--success), black 10%);
+    }
+    .bg-purple-500 {
+      background-color: var(--mauve);
+    }
+    .hover\:bg-purple-600:hover {
+      background-color: color-mix(in oklab, var(--mauve), black 10%);
+    }
+    .text-white {
+      color: var(--text);
+    }
+    .text-gray-900 {
+      color: var(--text);
+    }
+    .text-gray-500 {
+      color: var(--muted);
+    }
+    .border {
+      border-color: var(--border);
+    }
+    .border-gray-300 {
+      border-color: var(--border);
+    }
+    .hover\:bg-gray-100:hover {
+      background-color: color-mix(in oklab, var(--surface), black 5%);
+    }
+    /* Add more overrides for other colors/classes as needed */
+  </style>
+</head>
+<body class="font-sans p-4">
+  <div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold mb-4">PrepLab Settings</h1>
+    <button id="logoutBtn" class="bg-red-500 text-white p-2 rounded hover:bg-red-600 mb-4">Logout</button>
+    <details class="mb-4 bg-white rounded-lg shadow-md">
+      <summary class="text-2xl font-semibold p-4 cursor-pointer">Manage Users</summary>
+      <div class="p-4">
+        <div class="bg-white p-4 rounded-lg shadow-md mb-4">
+          <h3 class="text-lg font-medium">Add/Edit User</h3>
+          <input id="userId" type="hidden" />
+          <input id="username" placeholder="Username" class="p-2 m-2 border rounded" />
+          <input id="password" type="password" placeholder="Password" class="p-2 m-2 border rounded" />
+          <select id="role" class="p-2 m-2 border rounded">
+            <option value="user">User</option>
+            <option value="root">Root</option>
+          </select>
+          <input id="color" type="color" value="#000000" class="p-2 m-2" />
+          <button id="saveUser" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Save User</button>
+        </div>
+        <div id="usersList" class="grid gap-2"></div>
+      </div>
+    </details>
+    <details class="mb-4 bg-white rounded-lg shadow-md">
+      <summary class="text-2xl font-semibold p-4 cursor-pointer">Manage Classes</summary>
+      <div class="p-4">
+        <div class="bg-white p-4 rounded-lg shadow-md mb-4">
+          <h3 class="text-lg font-medium">Add/Edit Class</h3>
+          <input id="classId" type="hidden" />
+          <input id="className" placeholder="Class Name" class="p-2 m-2 border rounded" />
+          <input id="classColor" type="color" value="#000000" class="p-2 m-2" />
+          <button id="saveClass" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Save Class</button>
+        </div>
+        <div id="classesList" class="grid gap-2 mb-4"></div>
+        <h3 class="text-xl font-semibold mb-2">Manage Cards</h3>
+        <div class="bg-white p-4 rounded-lg shadow-md mb-4">
+          <h4 class="text-lg font-medium">Add/Edit Card</h4>
+          <input id="cardId" type="hidden" />
+          <select id="cardClassId" class="p-2 m-2 border rounded"></select>
+          <textarea id="cardText" placeholder="Card Text" class="p-2 m-2 border rounded w-full"></textarea>
+          <button id="saveCard" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Save Card</button>
+        </div>
+        <div id="cardsList" class="grid gap-2"></div>
+      </div>
+    </details>
+    <details class="mb-4 bg-white rounded-lg shadow-md">
+      <summary class="text-2xl font-semibold p-4 cursor-pointer">Manage Events</summary>
+      <div class="p-4">
+        <div class="bg-white p-4 rounded-lg shadow-md mb-4">
+          <h3 class="text-lg font-medium">Add/Edit Event</h3>
+          <input id="eventId" type="hidden" />
+          <input id="eventTitle" placeholder="Title" class="p-2 m-2 border rounded" />
+          <input id="eventDate" type="date" class="p-2 m-2 border rounded" />
+          <textarea id="eventDescription" placeholder="Description" class="p-2 m-2 border rounded w-full"></textarea>
+          <button id="saveEvent" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Save Event</button>
+        </div>
+        <div id="eventsList" class="grid gap-2"></div>
+      </div>
+    </details>
+    <details class="mb-4 bg-white rounded-lg shadow-md">
+      <summary class="text-2xl font-semibold p-4 cursor-pointer">Inventory</summary>
+      <div class="p-4">
+        <h3 class="text-xl font-semibold mb-2">Manage Carts</h3>
+        <div class="bg-white p-4 rounded-lg shadow-md mb-4">
+          <h4 class="text-lg font-medium">Add/Edit Cart</h4>
+          <input id="cartId" type="hidden" />
+          <input id="cartName" placeholder="Name" class="p-2 m-2 border rounded" />
+          <input id="cartCapacity" type="number" placeholder="Capacity" class="p-2 m-2 border rounded" />
+          <input id="cartUsage" type="number" placeholder="Current Usage" class="p-2 m-2 border rounded" />
+          <button id="saveCart" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Save Cart</button>
+        </div>
+        <div id="cartsList" class="grid gap-2"></div>
+      </div>
+    </details>
+    <details class="mb-4 bg-white rounded-lg shadow-md">
+      <summary class="text-2xl font-semibold p-4 cursor-pointer">Extras</summary>
+      <div class="p-4">
+        <h3 class="text-xl font-semibold mb-2">Global Theme Changer</h3>
+        <select id="themeSelect" class="p-2 m-2 border rounded">
+          <option value="default">Default</option>
+          <option value="catppuccin-mocha">Catppuccin Mocha</option>
+          <option value="catppuccin-latte">Catppuccin Latte</option>
+          <option value="catppuccin-frappe">Catppuccin Frappe</option>
+          <option value="catppuccin-macchiato">Catppuccin Macchiato</option>
+        </select>
+        <button id="applyTheme" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Apply Theme</button>
+      </div>
+    </details>
+    <h2 class="text-2xl font-semibold mb-2 mt-4">Change Requests</h2>
+    <div id="changeRequests" class="grid gap-2"></div>
+  </div>
+  <script type="module">
+    import { token, role } from './auth.js';
+    if (!token || role !== 'root') {
+      window.location.href = '/';
+    }
+    async function loadTheme() {
+      try {
+        const res = await fetch('/api/theme');
+        const { theme } = await res.json();
+        const themes = {
+          default: {
+            '--bg': '#f3f4f6',
+            '--text': '#111827',
+            '--primary': '#3b82f6',
+            '--danger': '#ef4444',
+            '--warning': '#eab308',
+            '--success': '#22c55e',
+            '--mauve': '#a78bfa',
+            '--surface': '#ffffff',
+            '--shadow': 'rgba(0,0,0,0.1)',
+            '--border': '#d1d5db',
+            '--muted': '#6b7280'
+          },
+          'catppuccin-mocha': {
+            '--bg': '#1e1e2e',
+            '--text': '#cdd6f4',
+            '--primary': '#89b4fa',
+            '--danger': '#f38ba8',
+            '--warning': '#fab387',
+            '--success': '#a6e3a1',
+            '--mauve': '#cba6f7',
+            '--surface': '#313244',
+            '--shadow': 'rgba(205,214,244,0.1)',
+            '--border': '#6c7086',
+            '--muted': '#9399b2'
+          },
+          'catppuccin-latte': {
+            '--bg': '#eff1f5',
+            '--text': '#4c4f69',
+            '--primary': '#1e66f5',
+            '--danger': '#d20f39',
+            '--warning': '#fe640b',
+            '--success': '#40a02b',
+            '--mauve': '#8839ef',
+            '--surface': '#ccd0da',
+            '--shadow': 'rgba(76,79,105,0.1)',
+            '--border': '#9ca0b0',
+            '--muted': '#6c6f85'
+          },
+          'catppuccin-frappe': {
+            '--bg': '#303446',
+            '--text': '#c6d0f5',
+            '--primary': '#8caaee',
+            '--danger': '#e78284',
+            '--warning': '#ef9f76',
+            '--success': '#a6d189',
+            '--mauve': '#ca9ee6',
+            '--surface': '#414559',
+            '--shadow': 'rgba(198,208,245,0.1)',
+            '--border': '#737994',
+            '--muted': '#a5adce'
+          },
+          'catppuccin-macchiato': {
+            '--bg': '#24273a',
+            '--text': '#cad3f5',
+            '--primary': '#8aadf4',
+            '--danger': '#ed8796',
+            '--warning': '#f5a97f',
+            '--success': '#a6da95',
+            '--mauve': '#c6a0f6',
+            '--surface': '#494d64',
+            '--shadow': 'rgba(202,211,245,0.1)',
+            '--border': '#5b6078',
+            '--muted': '#a5adcb'
+          }
+        };
+        const vars = themes[theme] || themes.default;
+        for (const [key, value] of Object.entries(vars)) {
+          document.documentElement.style.setProperty(key, value);
+        }
+      } catch (err) {
+        console.error('Failed to load theme', err);
+      }
+    }
+    loadTheme();
+    document.getElementById('logoutBtn').onclick = () => {
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      window.location.href = '/';
+    };
+    // ... (keep all existing load/save functions: loadUsers, loadClasses, loadCards, loadEvents, loadCarts, loadChangeRequests, and onclick handlers)
+    document.getElementById('applyTheme').onclick = async () => {
+      const theme = document.getElementById('themeSelect').value;
+      try {
+        await fetch('/api/theme', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({ theme })
+        });
+        loadTheme(); // Reload to apply
+      } catch (err) {
+        console.error('Error saving theme', err);
+      }
+    };
+    loadUsers();
+    loadClasses();
+    loadCards();
+    loadEvents();
+    loadCarts();
+    loadChangeRequests();
+  </script>
+</body>
+</html>

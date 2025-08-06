@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PrepLab Dashboard - Test Version</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg: #f3f4f6;
+      --text: #111827;
+      --primary: #3b82f6;
+      --danger: #ef4444;
+      --warning: #eab308;
+      --success: #22c55e;
+      --mauve: #a78bfa;
+      --surface: #ffffff;
+      --shadow: rgba(0,0,0,0.1);
+      --border: #d1d5db;
+      --muted: #6b7280;
+    }
+    .item-list { list-style: none; padding-left: 1em; }
+    .loading { opacity: 0.5; pointer-events: none; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+    }
+    .bg-gray-100 {
+      background-color: var(--bg);
+    }
+    .bg-white {
+      background-color: var(--surface);
+    }
+    .shadow-md {
+      box-shadow: 0 4px 6px -1px var(--shadow);
+    }
+    .bg-blue-500 {
+      background-color: var(--primary);
+    }
+    .hover\:bg-blue-600:hover {
+      background-color: color-mix(in oklab, var(--primary), black 10%);
+    }
+    .bg-red-500 {
+      background-color: var(--danger);
+    }
+    .hover\:bg-red-600:hover {
+      background-color: color-mix(in oklab, var(--danger), black 10%);
+    }
+    .bg-purple-500 {
+      background-color: var(--mauve);
+    }
+    .hover\:bg-purple-600:hover {
+      background-color: color-mix(in oklab, var(--mauve), black 10%);
+    }
+    .text-white {
+      color: var(--text);
+    }
+    .text-gray-900 {
+      color: var(--text);
+    }
+    .text-gray-500 {
+      color: var(--muted);
+    }
+    .border {
+      border-color: var(--border);
+    }
+    .border-gray-300 {
+      border-color: var(--border);
+    }
+    /* Add more overrides as needed */
+  </style>
+</head>
+<body class="font-sans p-4">
+  <div id="main">
+    <h1 class="text-3xl font-bold text-center mb-4">PrepLab Dashboard</h1>
+    <button id="logoutBtn" class="bg-red-500 text-white p-2 rounded hover:bg-red-600 mb-4">Logout</button>
+    <button id="settingsBtn" class="bg-purple-500 text-white p-2 rounded hover:bg-purple-600 mb-4">Settings</button>
+    <h2 class="text-2xl font-semibold mb-2">Pending Tasks</h2>
+    <div id="tasks" class="bg-white p-4 rounded-lg shadow-md mb-4 grid gap-2"></div>
+    <div class="grid grid-cols-2 gap-4 mb-4">
+      <button id="mapBtn" class="bg-blue-500 text-white p-4 rounded hover:bg-blue-600">Interactive Map (WIP)</button>
+      <button id="inventoryBtn" class="bg-blue-500 text-white p-4 rounded hover:bg-blue-600">Inventory List</button>
+      <button id="classesBtn" class="bg-blue-500 text-white p-4 rounded hover:bg-blue-600">List of Classes</button>
+      <button id="cartsBtn" class="bg-blue-500 text-white p-4 rounded hover:bg-blue-600">List of Carts</button>
+      <button id="globalCardsBtn" class="bg-blue-500 text-white p-4 rounded hover:bg-blue-600">Global Lab Cards Search</button>
+    </div>
+    <h2 class="text-2xl font-semibold mb-2">Upcoming Events</h2>
+    <div id="calendar" class="bg-white p-4 rounded-lg shadow-md grid gap-2"></div>
+  </div>
+  <script type="module">
+    import { token, role } from './auth.js';
+    if (!token || role !== 'root') {
+      window.location.href = '/';
+    }
+    async function loadTheme() {
+      try {
+        const res = await fetch('/api/theme');
+        const { colors } = await res.json();
+        for (const [key, value] of Object.entries(colors)) {
+          document.documentElement.style.setProperty(key, value);
+        }
+      } catch (err) {
+        console.error('Failed to load theme', err);
+      }
+    }
+    loadTheme();
+    document.getElementById('logoutBtn').onclick = () => {
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      window.location.href = '/';
+    };
+    document.getElementById('settingsBtn').onclick = () => window.location.href = '/settings.html';
+    document.getElementById('mapBtn').onclick = () => window.location.href = '/map.html';
+    document.getElementById('inventoryBtn').onclick = () => window.location.href = '/inventory.html';
+    document.getElementById('classesBtn').onclick = () => window.location.href = '/classes.html';
+    document.getElementById('cartsBtn').onclick = () => window.location.href = '/carts.html';
+    document.getElementById('globalCardsBtn').onclick = () => window.location.href = '/cards.html';
+    let allCards = [];
+    async function loadPendingTasks() {
+      try {
+        const res = await fetch('/api/cards?items=1', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) throw new Error('Failed to load cards');
+        allCards = await res.json();
+        renderPendingTasks();
+      } catch (err) {
+        console.error('Error loading tasks:', err);
+      }
+    }
+    function renderPendingTasks() {
+      const container = document.getElementById('tasks');
+      container.innerHTML = '';
+      const pending = allCards.flatMap(card =>
+        card.tasks.filter(t => !t.is_checked).map(t => ({ ...t, card }))
+      );
+      if (pending.length === 0) {
+        container.innerHTML = '<p>No pending tasks.</p>';
+        return;
+      }
+      const ul = document.createElement('ul');
+      ul.className = 'item-list';
+      for (const { card, ...task } of pending) {
+        const li = document.createElement('li');
+        li.className = 'flex items-center mb-2';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = false;
+        cb.addEventListener('change', async () => {
+          try {
+            const res = await fetch('/api/tasks/check', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+              },
+              body: JSON.stringify({ taskId: task.id, checked: true })
+            });
+            if (!res.ok) throw new Error('Failed to update task');
+            loadPendingTasks(); // Reload
+          } catch (err) {
+            console.error('Error updating task:', err);
+            cb.checked = false;
+          }
+        });
+        li.appendChild(cb);
+        li.appendChild(document.createTextNode(` ${card.class} - ${card.card_text} - ${task.description}`));
+        ul.appendChild(li);
+      }
+      container.appendChild(ul);
+    }
+    async function loadUpcomingEvents() {
+      try {
+        const res = await fetch('/api/events');
+        if (!res.ok) throw new Error('Failed to load events');
+        const events = await res.json();
+        renderUpcomingEvents(events);
+      } catch (err) {
+        console.error('Error loading events:', err);
+      }
+    }
+    function renderUpcomingEvents(events) {
+      const container = document.getElementById('calendar');
+      container.innerHTML = '';
+      const today = new Date().toISOString().split('T')[0];
+      const upcoming = events.filter(e => e.date >= today).sort((a, b) => a.date.localeCompare(b.date));
+      if (upcoming.length === 0) {
+        container.innerHTML = '<p>No upcoming events.</p>';
+        return;
+      }
+      const ul = document.createElement('ul');
+      ul.className = 'item-list';
+      for (const evt of upcoming) {
+        const li = document.createElement('li');
+        li.textContent = `${evt.date}: ${evt.title} - ${evt.description || ''}`;
+        ul.appendChild(li);
+      }
+      container.appendChild(ul);
+    }
+    loadPendingTasks();
+    loadUpcomingEvents();
+  </script>
+</body>
+</html>

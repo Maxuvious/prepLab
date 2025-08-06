@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Change Request Diff</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg: #f3f4f6;
+      --text: #111827;
+      --primary: #3b82f6;
+      --danger: #ef4444;
+      --warning: #eab308;
+      --success: #22c55e;
+      --mauve: #a78bfa;
+      --surface: #ffffff;
+      --shadow: rgba(0,0,0,0.1);
+      --border: #d1d5db;
+      --muted: #6b7280;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+    }
+    .bg-gray-100 {
+      background-color: var(--bg);
+    }
+    .bg-white {
+      background-color: var(--surface);
+    }
+    .shadow-md {
+      box-shadow: 0 4px 6px -1px var(--shadow);
+    }
+    .bg-blue-500 {
+      background-color: var(--primary);
+    }
+    .hover\:bg-blue-600:hover {
+      background-color: color-mix(in oklab, var(--primary), black 10%);
+    }
+    .bg-red-500 {
+      background-color: var(--danger);
+    }
+    .hover\:bg-red-600:hover {
+      background-color: color-mix(in oklab, var(--danger), black 10%);
+    }
+    .bg-green-500 {
+      background-color: var(--success);
+    }
+    .hover\:bg-green-600:hover {
+      background-color: color-mix(in oklab, var(--success), black 10%);
+    }
+    .bg-gray-200 {
+      background-color: color-mix(in oklab, var(--text), var(--bg) 90%);
+    }
+    .bg-green-100 {
+      background-color: color-mix(in oklab, var(--success), var(--bg) 90%);
+    }
+    .text-white {
+      color: var(--text);
+    }
+    .text-gray-900 {
+      color: var(--text);
+    }
+    .text-gray-500 {
+      color: var(--muted);
+    }
+    .border {
+      border-color: var(--border);
+    }
+    .border-gray-300 {
+      border-color: var(--border);
+    }
+    .text-green-700 {
+      color: color-mix(in oklab, var(--success), black 20%);
+    }
+    /* Add more overrides as needed */
+  </style>
+</head>
+<body class="font-sans p-4">
+  <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md">
+    <h1 class="text-3xl font-bold mb-4">Change Request Diff</h1>
+    <div id="diffContent" class="grid grid-cols-2 gap-4 mb-4">
+      <div class="bg-gray-200 p-4 rounded">
+        <h2 class="text-xl font-semibold mb-2">Original</h2>
+        <p id="originalClass"></p>
+        <p id="originalText"></p>
+      </div>
+      <div class="bg-green-100 p-4 rounded">
+        <h2 class="text-xl font-semibold mb-2">Proposed</h2>
+        <p id="newClass"></p>
+        <p id="newText"></p>
+      </div>
+    </div>
+    <div class="flex gap-4">
+      <button id="approveBtn" class="bg-green-500 text-white p-2 rounded hover:bg-green-600">Approve</button>
+      <button id="rejectBtn" class="bg-red-500 text-white p-2 rounded hover:bg-red-600">Reject</button>
+      <button id="backBtn" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Back</button>
+    </div>
+  </div>
+  <script type="module">
+    import { token, role } from './auth.js';
+    if (!token || role !== 'root') {
+      window.location.href = '/';
+    }
+    async function loadTheme() {
+      try {
+        const res = await fetch('/api/theme');
+        const { colors } = await res.json();
+        for (const [key, value] of Object.entries(colors)) {
+          document.documentElement.style.setProperty(key, value);
+        }
+      } catch (err) {
+        console.error('Failed to load theme', err);
+      }
+    }
+    loadTheme();
+    const urlParams = new URLSearchParams(window.location.search);
+    const requestId = parseInt(urlParams.get('id'));
+    if (!requestId) {
+      alert('Invalid request ID');
+      window.location.href = '/settings.html';
+    }
+    async function loadRequest() {
+      try {
+        const res = await fetch('/api/change-requests', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const requests = await res.json();
+        const req = requests.find(r => r.id === requestId);
+        if (!req) throw new Error('Request not found');
+        // Fetch original card
+        const cardRes = await fetch('/api/cards?items=1', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const cards = await cardRes.json();
+        const originalCard = cards.find(c => c.id === req.card_id);
+        document.getElementById('originalClass').textContent = `Class: ${originalCard.class}`;
+        document.getElementById('originalText').textContent = `Text: ${originalCard.card_text}`;
+        document.getElementById('newClass').textContent = `Class: ${req.new_class}`;
+        document.getElementById('newText').textContent = `Text: ${req.new_card_text}`;
+        // Simple diff highlight (for demo, just bold changes)
+        if (originalCard.class !== req.new_class) document.getElementById('newClass').classList.add('font-bold', 'text-green-700');
+        if (originalCard.card_text !== req.new_card_text) document.getElementById('newText').classList.add('font-bold', 'text-green-700');
+      } catch (err) {
+        console.error('Error loading request:', err);
+        alert('Failed to load request');
+      }
+    }
+    document.getElementById('approveBtn').onclick = async () => {
+      try {
+        await fetch('/api/change-requests/approve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ requestId })
+        });
+        alert('Approved');
+        window.location.href = '/settings.html';
+      } catch (err) {
+        console.error('Error approving:', err);
+      }
+    };
+    document.getElementById('rejectBtn').onclick = async () => {
+      try {
+        await fetch('/api/change-requests/reject', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ requestId })
+        });
+        alert('Rejected');
+        window.location.href = '/settings.html';
+      } catch (err) {
+        console.error('Error rejecting:', err);
+      }
+    };
+    document.getElementById('backBtn').onclick = () => window.location.href = '/settings.html';
+    loadRequest();
+  </script>
+</body>
+</html>

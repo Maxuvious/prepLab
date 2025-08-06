@@ -6,34 +6,100 @@
   <title>PrepLab Cards - Test Version</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
+    :root {
+      --bg: #f3f4f6;
+      --text: #111827;
+      --primary: #3b82f6;
+      --danger: #ef4444;
+      --warning: #eab308;
+      --success: #22c55e;
+      --mauve: #a78bfa;
+      --surface: #ffffff;
+      --shadow: rgba(0,0,0,0.1);
+      --border: #d1d5db;
+      --muted: #6b7280;
+    }
     .item-list { list-style: none; padding-left: 1em; }
     .loading { opacity: 0.5; pointer-events: none; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+    }
+    .bg-gray-100 {
+      background-color: var(--bg);
+    }
+    .bg-white {
+      background-color: var(--surface);
+    }
+    .shadow-md {
+      box-shadow: 0 4px 6px -1px var(--shadow);
+    }
+    .bg-blue-500 {
+      background-color: var(--primary);
+    }
+    .hover\:bg-blue-600:hover {
+      background-color: color-mix(in oklab, var(--primary), black 10%);
+    }
+    .bg-red-500 {
+      background-color: var(--danger);
+    }
+    .hover\:bg-red-600:hover {
+      background-color: color-mix(in oklab, var(--danger), black 10%);
+    }
+    .text-white {
+      color: var(--text);
+    }
+    .text-gray-900 {
+      color: var(--text);
+    }
+    .text-gray-500 {
+      color: var(--muted);
+    }
+    .border {
+      border-color: var(--border);
+    }
+    .border-gray-300 {
+      border-color: var(--border);
+    }
+    .bg-yellow-100 {
+      background-color: color-mix(in oklab, var(--warning), var(--bg) 90%);
+    }
+    /* Add more overrides as needed */
   </style>
 </head>
-<body class="bg-gray-100 font-sans p-4">
+<body class="font-sans p-4">
   <div id="main">
     <h1 id="title" class="text-3xl font-bold text-center mb-4">PrepLab Cards</h1>
     <button id="logoutBtn" class="bg-red-500 text-white p-2 rounded hover:bg-red-600 mb-4">Logout</button>
-    <input type="text" id="search" placeholder="Search by class..." class="w-full max-w-md mx-auto p-2 mb-4 border rounded" />
+    <input type="text" id="search" placeholder="Search by class or text..." class="w-full max-w-md mx-auto p-2 mb-4 border rounded" />
     <div id="cards" class="grid gap-4 max-w-4xl mx-auto"></div>
   </div>
-
   <script type="module">
     import { token, role } from './auth.js';
-
     if (!token || role === 'root') {
       window.location.href = '/';
     }
-
+    async function loadTheme() {
+      try {
+        const res = await fetch('/api/theme');
+        const { colors } = await res.json();
+        for (const [key, value] of Object.entries(colors)) {
+          document.documentElement.style.setProperty(key, value);
+        }
+      } catch (err) {
+        console.error('Failed to load theme', err);
+      }
+    }
+    loadTheme();
     document.getElementById('logoutBtn').onclick = () => {
       localStorage.removeItem('token');
       localStorage.removeItem('role');
       window.location.href = '/';
     };
-
+    const urlParams = new URLSearchParams(window.location.search);
+    const classId = urlParams.get('class_id');
     const { loadCards } = await import('./cards.js');
-    loadCards();
-
+    loadCards(classId);
     document.getElementById('search').addEventListener('input', async (e) => {
       const value = e.target.value.toLowerCase();
       const { renderCards } = await import('./cards.js');

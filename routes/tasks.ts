@@ -18,11 +18,13 @@ const validateTaskBody = (body: any): TaskBody => {
 export const postTaskCheck = withAuth(withBody(
   validateTaskBody,
   async (_req, { taskId, checked }, session) => {
-    safeQuery(
-      `UPDATE card_tasks SET is_checked = ?, checked_by = ?, checked_at = datetime('now') WHERE id = ?`,
-      [checked ? 1 : 0, session.id, taskId],
-      "Task check update failed"
-    );
+    let sql = "UPDATE card_tasks SET is_checked = ?, checked_by = ?, checked_at = ? WHERE id = ?";
+    let params = [checked ? 1 : 0, checked ? session.id : null, checked ? "datetime('now')" : null, taskId];
+    safeQuery(sql, params, "Task check update failed");
+    const [[changes]] = safeQuery("SELECT changes()");
+    if (changes === 0) {
+      return new Response(JSON.stringify({ error: "Task not found" }), { status: 404 });
+    }
     const uRow = [...safeQuery("SELECT color FROM users WHERE id = ?", [session.id])][0];
     const color = uRow ? uRow[0] as string : null;
     const payload = { taskId, checked, user: session.username, color };

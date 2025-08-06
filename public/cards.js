@@ -1,10 +1,10 @@
 import { token } from './auth.js';
-
 let allCards = [];
-
-async function loadCards() {
+async function loadCards(classId = null) {
   try {
-    const res = await fetch('/api/cards?items=1', {
+    let url = '/api/cards?items=1';
+    if (classId) url += `&class_id=${classId}`;
+    const res = await fetch(url, {
       headers: token ? { 'Authorization': 'Bearer ' + token } : {}
     });
     if (!res.ok) throw new Error('Failed to load cards');
@@ -14,25 +14,24 @@ async function loadCards() {
     console.error('Error loading cards:', err);
   }
 }
-
 function renderCards(searchTerm) {
   const container = document.getElementById('cards');
   container.innerHTML = '';
   const filtered = searchTerm
-    ? allCards.filter(c => c.class.toLowerCase().includes(searchTerm.toLowerCase()))
+    ? allCards.filter(c => c.class.toLowerCase().includes(searchTerm) || c.card_text.toLowerCase().includes(searchTerm))
     : allCards;
-
   for (const card of filtered) {
     const div = document.createElement('div');
     div.className = 'bg-yellow-100 border border-gray-300 rounded-lg shadow-md p-4';
     const title = document.createElement('h3');
     title.className = 'text-xl font-semibold';
+    title.style.color = card.class_color;
     title.textContent = card.class;
     const text = document.createElement('p');
     text.textContent = card.card_text;
     const ul = document.createElement('ul');
     ul.className = 'item-list mt-2';
-    for (const task of card.tasks || []) {  // Ensure tasks exist
+    for (const task of card.tasks || []) {
       const li = document.createElement('li');
       li.className = 'flex items-center';
       const cb = document.createElement('input');
@@ -54,6 +53,7 @@ function renderCards(searchTerm) {
             body: JSON.stringify({ taskId: task.id, checked: cb.checked })
           });
           if (!res.ok) throw new Error('Failed to update task');
+          loadCards(); // Reload to update
         } catch (err) {
           console.error('Error updating task:', err);
           cb.checked = !cb.checked; // Revert on error
@@ -80,7 +80,6 @@ function renderCards(searchTerm) {
     div.appendChild(title);
     div.appendChild(text);
     div.appendChild(ul);
-
     // Add "Suggest Edit" button for logged-in users
     if (token) {
       const editBtn = document.createElement('button');
@@ -115,9 +114,7 @@ function renderCards(searchTerm) {
       };
       div.appendChild(editBtn);
     }
-
     container.appendChild(div);
   }
 }
-
 export { loadCards, renderCards };
